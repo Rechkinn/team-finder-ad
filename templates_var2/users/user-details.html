@@ -14,26 +14,26 @@
 <div class="profile-container">
     <div class="profile-header">
         <div class="profile-info">
-            {% if user.avatar %}
-                <img src="{{ user.avatar.url }}" alt="Аватар" class="profile-avatar">
+            {% if profile_user.avatar %}
+                <img src="{{ profile_user.avatar.url }}" alt="Аватар" class="profile-avatar">
             {% else %}
                 <img src="{% static 'images/default-avatar.png' %}" alt="Аватар по умолчанию" class="profile-avatar">
             {% endif %}
             <div class="profile-details">
-                <h2 class="profile-name">{{ user.name }} {{ user.surname }}</h2>
+                <h2 class="profile-name">{{ profile_user.name }} {{ profile_user.surname }}</h2>
                 <p class="profile-description">
-                    {{ user.about|default:"Описание профиля пока не добавлено." }}
+                    {{ profile_user.about|default:"Описание профиля пока не добавлено." }}
                 </p>
                 <div class="profile-contacts">
-                    {% if user.email %}
-                    <span>{% include 'includes/svg/email.html' %} {{ user.email }}</span>
+                    {% if profile_user.email %}
+                    <span>{% include 'includes/svg/email.html' %} {{ profile_user.email }}</span>
                     {% endif %}
-                    {% if user.phone %}
-                    <span>{% include 'includes/svg/phone.html' %} {{ user.phone }}</span>
+                    {% if profile_user.phone %}
+                    <span>{% include 'includes/svg/phone.html' %} {{ profile_user.phone }}</span>
                     {% endif %}
-                    {% if user.github_url %}
+                    {% if profile_user.github_url %}
                     <span>{% include 'includes/svg/github.html' %}
-                        <a href="{{ user.github_url }}" target="_blank">GitHub</a>
+                        <a href="{{ profile_user.github_url }}" target="_blank">GitHub</a>
                     </span>
                     {% endif %}
                 </div>
@@ -42,15 +42,15 @@
         <div class="profile-actions">
             <a href="#"
                class="black-button black-button-share share-button"
-               data-url="/users/{{ user.id }}">
+               data-url="/users/{{ profile_user.id }}">
                 {% include 'includes/svg/share.html' %}
             </a>
-            {% if request.user.id == user.id %}
-            <a href="/users/edit-profile" class="black-button">
+            {% if request.user.id == profile_user.id %}
+            <a href="/users/edit/" class="black-button">
                 {% include 'includes/svg/pen.html' %}
                 Редактировать
             </a>
-            <a href="/projects/create-project" class="black-button">
+            <a href="/projects/create-project/" class="black-button">
                 {% include 'includes/svg/plus.html' %}
                 Добавить проект
             </a>
@@ -58,21 +58,41 @@
         </div>
     </div>
 
-    <h3>Проекты ({{ user.owned_projects.all|length }})</h3>
+    <div class="skills-section">
+        <h3>Навыки</h3>
+        <div id="skills-container"
+             data-user-id="{{ profile_user.id }}">
+            {% for skill in profile_user.skills.all %}
+            <span class="skill-chip" data-id="{{ skill.id }}">
+                {{ skill.name }}
+                {% if request.user.id == profile_user.id %}
+                <button type="button" class="remove-skill-btn" aria-label="Удалить" title="Удалить">×</button>
+                {% endif %}
+            </span>
+            {% empty %}
+            <span class="skill-empty">Навыки пока не добавлены.</span>
+            {% endfor %}
+            {% if request.user.id == profile_user.id %}
+            <button id="add-skill-btn" class="black-button">+ Добавить навык</button>
+            <div id="skill-input-wrapper" class="hidden">
+                <input type="text" id="skill-input" placeholder="Введите навык..." autocomplete="off">
+                <ul id="skill-suggestions" class="skill-suggestions hidden"></ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h3>Проекты ({{ profile_user.owned_projects.all|length }})</h3>
 
     <div class="collapsed-project-grid">
-        {% for project in user.owned_projects.all %}
+        {% for project in profile_user.owned_projects.all %}
         <div class="collapsed-project-card">
             <div class="collapsed-project-card-header">
-                <h4><a href="/projects/{{ project.id }}">{{ project.name }}</a></h4>
+                <h4><a href="/projects/{{ project.id }}/">{{ project.name }}</a></h4>
                 <span class="project-status-black">
-                    {% if project.status == "open" %}
-                        Открыт
-                    {% elif project.status == "closed" %}
-                        Закрыт
-                    {% else %}
-                        {{ project.status }}
-                    {% endif %}
+                    {% if project.status == "open" %}Открыт
+                    {% elif project.status == "closed" %}Закрыт
+                    {% else %}{{ project.status }}{% endif %}
                 </span>
             </div>
             <div class="collapsed-project-card-body">
@@ -105,4 +125,9 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/skills.js' %}"></script>
+{% endblock %}
+
 {% endwith %}

@@ -12,8 +12,8 @@
 <div class="project-container">
     <div class="project-header">
         <h2 class="project-title">Актуальные проекты</h2>
-        {% if projects %}
-            <a href="/projects/create-project" class="black-button">+ Создать проект</a>
+        {% if user.is_authenticated %}
+            <a href="/projects/create-project/" class="black-button">+ Создать проект</a>
         {% endif %}
     </div>
     <p class="project-subtitle">Найдите интересный проект и присоединитесь к команде</p>
@@ -26,6 +26,26 @@
         {% endfor %}
     </div>
     {% include 'includes/project-fav-toggle.js' %}
+
+    {% if projects.has_other_pages %}
+    <div class="pagination">
+        {% if projects.has_previous %}
+            <a href="?page={{ projects.previous_page_number }}" class="pagination-btn">←</a>
+        {% endif %}
+
+        {% for num in projects.paginator.page_range %}
+            {% if projects.number == num %}
+                <span class="pagination-btn active">{{ num }}</span>
+            {% else %}
+                <a href="?page={{ num }}" class="pagination-btn">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if projects.has_next %}
+            <a href="?page={{ projects.next_page_number }}" class="pagination-btn">→</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %}

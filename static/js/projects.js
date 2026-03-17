@@ -64,7 +64,7 @@
             return;
           }
 
-          if (data.participant) {
+          if (data.participating) {
             participateBtn.textContent = "Отказаться от участия";
 
             const noParticipants = document.getElementById("no-participants");
