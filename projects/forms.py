@@ -15,7 +15,8 @@ class ProjectForm(forms.ModelForm):
         widgets = {
             "status": forms.Select(choices=Project.STATUS_CHOICES),
             "description": forms.Textarea(attrs={"placeholder": "Опишите ваш проект..."}),
-            "github_url": forms.URLInput(attrs={"placeholder": "https://github.com/username/repository"}),
+            "github_url": forms.URLInput(
+                attrs={"placeholder": "https://github.com/username/repository"}),
         }
 
     def clean_github_url(self):

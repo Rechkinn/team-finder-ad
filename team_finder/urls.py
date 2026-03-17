@@ -10,8 +10,8 @@ def home_redirect(request):
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", home_redirect),
-    path("projects/", include("projects.urls")),
-    path("users/", include("users.urls")),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  path("admin/", admin.site.urls),
+                  path("", home_redirect),
+                  path("projects/", include("projects.urls")),
+                  path("users/", include("users.urls")),
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

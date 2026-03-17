@@ -134,7 +134,8 @@ def add_skill_view(request, user_id):
         profile_user.skills.add(skill)
         added = True
 
-    return JsonResponse({"skill_id": skill.id, "id": skill.id, "name": skill.name, "created": created, "added": added})
+    return JsonResponse({"skill_id": skill.id, "id": skill.id, "name": skill.name,
+                         "created": created, "added": added})
 
 
 @login_required
