@@ -1,13 +1,25 @@
+import json
+from http import HTTPStatus
+
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from .forms import CustomPasswordChangeForm, EditProfileForm, LoginForm, RegisterForm
 from .models import Skill
 
 User = get_user_model()
+USERS_PER_PAGE = 12
+SKILLS_AUTOCOMPLETE_LIMIT = 10
+
+
+def paginate(queryset, request, per_page=USERS_PER_PAGE):
+    paginator = Paginator(queryset, per_page)
+    page_number = request.GET.get("page")
+    return paginator.get_page(page_number)
 
 
 def register_view(request):
@@ -16,7 +28,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("/projects/list/")
+            return redirect(reverse("projects:project_list"))
         return render(request, "users/register.html", {"form": form})
     form = RegisterForm()
     return render(request, "users/register.html", {"form": form})
@@ -33,7 +45,7 @@ def login_view(request):
             )
             if user:
                 login(request, user)
-                return redirect("/projects/list/")
+                return redirect(reverse("projects:project_list"))
             form.add_error(None, "Неверный имейл или пароль")
         return render(request, "users/login.html", {"form": form})
     form = LoginForm()
@@ -42,7 +54,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect("/projects/list/")
+    return redirect(reverse("projects:project_list"))
 
 
 def participants_view(request):
@@ -53,9 +65,7 @@ def participants_view(request):
     if skill_name:
         participants = participants.filter(skills__name=skill_name)
         active_skill = skill_name
-    paginator = Paginator(participants, 12)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginate(participants, request)
     return render(
         request,
         "users/participants.html",
@@ -78,7 +88,7 @@ def edit_profile_view(request):
         form = EditProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            return redirect(f"/users/{request.user.pk}/")
+            return redirect(reverse("users:user_detail", kwargs={"user_id": request.user.pk}))
         return render(request, "users/edit_profile.html", {"form": form})
     form = EditProfileForm(instance=request.user)
     return render(request, "users/edit_profile.html", {"form": form})
@@ -91,7 +101,7 @@ def change_password_view(request):
         if form.is_valid():
             form.save()
             login(request, request.user)
-            return redirect(f"/users/{request.user.pk}/")
+            return redirect(reverse("users:user_detail", kwargs={"user_id": request.user.pk}))
         return render(request, "users/change_password.html", {"form": form})
     form = CustomPasswordChangeForm(request.user)
     return render(request, "users/change_password.html", {"form": form})
@@ -99,7 +109,7 @@ def change_password_view(request):
 
 def skills_autocomplete(request):
     q = request.GET.get("q", "")
-    skills = Skill.objects.filter(name__istartswith=q).order_by("name")[:10]
+    skills = Skill.objects.filter(name__istartswith=q).order_by("name")[:SKILLS_AUTOCOMPLETE_LIMIT]
     data = [{"id": s.id, "name": s.name} for s in skills]
     return JsonResponse(data, safe=False)
 
@@ -107,10 +117,10 @@ def skills_autocomplete(request):
 @login_required
 def add_skill_view(request, user_id):
     if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
+        return JsonResponse({"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED)
     profile_user = get_object_or_404(User, pk=user_id)
     if profile_user != request.user:
-        return JsonResponse({"error": "Forbidden"}, status=403)
+        return JsonResponse({"error": "Forbidden"}, status=HTTPStatus.FORBIDDEN)
     try:
         import json
         body = json.loads(request.body)
@@ -128,7 +138,7 @@ def add_skill_view(request, user_id):
     elif name:
         skill, created = Skill.objects.get_or_create(name=name)
     else:
-        return JsonResponse({"error": "No skill_id or name provided"}, status=400)
+        return JsonResponse({"error": "No skill_id or name provided"}, status=HTTPStatus.BAD_REQUEST)
 
     if skill not in profile_user.skills.all():
         profile_user.skills.add(skill)
@@ -141,10 +151,10 @@ def add_skill_view(request, user_id):
 @login_required
 def remove_skill_view(request, user_id, skill_id):
     if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
+        return JsonResponse({"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED)
     profile_user = get_object_or_404(User, pk=user_id)
     if profile_user != request.user:
-        return JsonResponse({"error": "Forbidden"}, status=403)
+        return JsonResponse({"error": "Forbidden"}, status=HTTPStatus.FORBIDDEN)
     skill = get_object_or_404(Skill, pk=skill_id)
     profile_user.skills.remove(skill)
     return JsonResponse({"status": "ok"})
